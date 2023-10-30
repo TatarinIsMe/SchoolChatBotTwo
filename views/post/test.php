@@ -34,7 +34,7 @@ use yii\widgets\Pjax;
 <?php Pjax::begin(); ?>
 <?= Html::beginForm(['post/index'], 'post', ['data-pjax' => '', 'class' => 'form-inline']); ?>
 <?= Html::input('text', 'string', Yii::$app->request->post('string'), ['class' => 'form-control']) ?>
-<?= Html::submitButton('Получить хеш', ['class' => 'btn btn-lg btn-primary', 'name' => 'hash-button']) ?>
+<?= Html::submitButton('Отправить', ['class' => 'btn btn-lg btn-primary', 'name' => 'hash-button']) ?>
 <?= Html::endForm() ?>
 
 <h1>Бот: <?php

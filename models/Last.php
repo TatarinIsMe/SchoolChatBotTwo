@@ -6,7 +6,7 @@ class Last extends ActiveRecord
 {
     public static function tableName()
     {
-        return 'currentRow';
+        return 'current_row';
     }
 
 
