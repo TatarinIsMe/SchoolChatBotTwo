@@ -13,4 +13,5 @@ class Questions extends ActiveRecord
         return $this->hasMany(Answer::className(),['question_id' => 'id']);
     }
 
+
 }

@@ -117,43 +117,68 @@ class PostController extends AppController {
         $item =new Questions();
         $item->text = $text;
         $item->save(false);
-        $count = Last::find()
+        $count = Questions::find()
             ->count();
         return $count;
 
     }
     public function addAnswer($count,$idNext){
-        $itemYes =new Questions();
+        $itemYes =new Answer();
         $itemYes->name = 'Да';
         $itemYes->question_id = $count;
+        $itemYes->next_question_id = $count;
         $itemYes->save(false);
 
-        $itemNo =new Questions();
+        $itemNo =new Answer();
         $itemNo->name = 'Нет';
         $itemNo->question_id = $count;
         $itemNo->next_question_id = $idNext;
         $itemNo->save(false);
-
-
+    }
+    public function addAnswerStrict($count,$idNext){
+        $itemYes =new Answer();
+        $itemYes->name = 'Ответ';
+        $itemYes->question_id = $count;
+        $itemYes->next_question_id = $idNext;
+        $itemYes->save(false);
     }
     public function changeAnswer($id,$nextId){
-        $post = Answer::find()->where(['question_id' =>$id,'name' => 'Нет']);
-        $post->next_question_id = $nextId;
-        $post->save();
+        $post = Answer::find()->where(['question_id' =>$id])->all();
+        $post[1]->next_question_id = $nextId;
+        $post[1]->save();
+    }
+    public function changeAnswerStrict($id,$nextId){
+        $post = Answer::find()->where(['question_id' =>$id])->all();
+        $post[0]->next_question_id = $nextId;
+        $post[0]->save();
     }
     public function actionShow(){
         $model = new AddForm();
         if ($model->load(Yii::$app->request->post())){
+
             $idQuestion = $model->id;
         if ($model->answer == 'да-нет'){
             $answer = Questions::find()->with('answer')->where(['id' => $idQuestion])->all();
             $next_id = $answer[0]->answer[1]->next_question_id;
+        } else {
+            $answer = Questions::find()->with('answer')->where(['id' => $idQuestion])->all();
+            $next_id = $answer[0]->answer[0]->next_question_id;
         }
         $count = $this->addQuestion($model->question);
-        $this->addAnswer($count,$next_id);
-        $this->changeAnswer($idQuestion,$count);
+        if ($model->answer == 'да-нет'){
+            $this->addAnswer($count,$next_id);
+            $this->changeAnswer($idQuestion,$count);
+        } else {
+            $this->addAnswerStrict($count,$next_id);
+            $this->changeAnswerStrict($idQuestion,$count);
+        }
+
+
 
         }
+//        $answer = Questions::find()->with('answer')->where(['id' => 11])->all();
+//            $next_id = $answer[0]->answer[1]->next_question_id;
+//            debug($next_id);
 //        $model->load(Yii::$app->request->post());
 //        $idQuestion = $model->id;
 //        if ($model->answer == 'да-нет'){
