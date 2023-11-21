@@ -7,6 +7,7 @@ header("Access-Control-Allow-Origin: *");
 use app\models\Answer;
 use app\models\Category;
 use app\models\Last;
+use app\models\LastOrder;
 use app\models\Questions;
 use Yii;
 use app\models\TestForm;
@@ -16,6 +17,7 @@ class PostController extends AppController {
 
     public $layout = 'basic';
     public $array = array();
+
     public $lastItem=0;
 
     public function getLastItem(){
@@ -27,11 +29,24 @@ class PostController extends AppController {
         return $lastItem;
     }
 
+    public function actionMail(){
+        $result = Yii::$app->mailer->compose()
+            ->setFrom('ibnrinat02@mail.ru')
+            ->setTo('ibnrinat02@mail.ru')
+            ->setSubject('Session')
+            ->setTextBody('Hi there')
+            ->setHtmlBody('<b>Text Html</b>')
+            ->send();
+        debug($result);
+        die;
+    }
+
+
     public function actionIndex(){
         $array[] = 'Welcome';
         $idNextQ = 0;
+        $textOutputTest ='';
 
-        //debug($lastItem->current);
 
         //$question = $this->getQuestion(1);
         $string = Yii::$app->request->post('string');
@@ -43,15 +58,19 @@ class PostController extends AppController {
             if ($string == 'да' || $string == 'нет'){
                 //$question = $this->getYesNo($string);
                 $this->getYesNo($string);
+                //обнуление заказа
 
             } else {
-                $this->getStrictAnswer();
+                 $textOutputTest = $this->getStrictAnswer($string);
+
             }
 
               //  $question = $this->getYesNo($string);
                 //debug($question);
                // $question = $this->getQuestion($question->idNo);
         }
+
+
         $lastItem = $this->getLastItem();
         $question = $this->getQuestion($lastItem->current_row)->text;
       //  $questionTwo =  $this->getQuestion($idNextQ);
@@ -83,24 +102,87 @@ class PostController extends AppController {
        // return $this->render('test', compact('model', 'array'));
 
         //return $this->render('test', ['messages' => $question->text]);
-        return $this->render('test', ['messages' => $question]);
+        return $this->render('test', ['messages' => $question, 'testText' => $textOutputTest]);
     }
     public function getYesNo($answer){
         $current = $this->getLastItem();
         $answers = Questions::find()->with('answer')->where(['id' => $current])->all();
         if ($answer == 'да'){
             $this->saveIdItem($answers[0]->answer[0]->next_question_id);
+            //Описание заявки
+            $textOrder = $answers[0]->answer[0]->name;
+            $message = '';
+            $lastItem = $this->getLastOrder();
+            $message .= $lastItem;
+            $message .=$textOrder;
+            $this->updateLastOrder($message);
            // return $answers[0]->text;
         }  else {
             $this->saveIdItem($answers[0]->answer[1]->next_question_id);
+            $text = 'Заявка  ';
+            $this->updateLastOrder($text);
             //return $answers[0]->text;
         }
     }
-    public function getStrictAnswer(){
+    public function getStrictAnswer($answer){
+        $message = '';
+        $lastItem = $this->getLastOrder();
+        $message .= $lastItem;
+        $message .=$answer;
+
         $current = $this->getLastItem();
         $answers = Questions::find()->with('answer')->where(['id' => $current])->all();
+        $temp = $answers[0]->answer[0]->name;
+        $message .= $temp;//приписываем ответ с ответа на вопрос
+        //обновляем значение в бд
+        $this->updateLastOrder($message);
+
+
+        //Прописываем проверку на пустое
+        if ($answers[0]->answer[0]->next_question_id == null){
+            //$specialist = $answers[0]->answer[0]->name;
+           // $this->sentToSpecialist($message);
+            $this->saveIdItem(1);
+            return $message;
+
+        }
         $this->saveIdItem($answers[0]->answer[0]->next_question_id);
+        return $message;
     }
+
+    public function getLastOrder(){
+        $count = LastOrder::find()
+            ->count();
+        $lastItem = LastOrder::find()
+            ->where(['id' => $count])
+            ->one();
+        return $lastItem->text;
+    }
+    //Обновление последнего заказа в бд, заказ - это заявка для спецалиста
+    public function updateLastOrder($text){
+        $count = LastOrder::find()
+            ->count();
+        $post = LastOrder::find()->where(['id' =>$count])->all();
+        $post[0]->text = $text;
+        $post[0]->save();
+    }
+
+    public function sentToSpecialist($message){
+        Yii::$app->mailer->compose('cart', ['message' => $message])
+            ->setFrom('ibnrinat02@mail.ru')
+            ->setTo('ibnrinat02@mail.ru')
+            ->setSubject('Session')
+            ->send();
+//        Yii::$app->mailer->compose()
+//            ->setFrom('ibnrinat02@gmail.com')
+//            ->setTo('ibnrinat02@gmail.com')
+//            ->setSubject('Session')
+//            ->setTextBody('Hi there')
+//            ->setHtmlBody('<b>Text Html</b>')
+//            ->send();
+
+    }
+
     public function getQuestion($id){
         $qa = Questions::findOne($id);
         $this->saveIdItem($id);
