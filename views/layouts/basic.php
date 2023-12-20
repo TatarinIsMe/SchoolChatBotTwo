@@ -20,9 +20,9 @@ AppAsset::register($this);
     <div class="wrap">
         <div class="container">
             <ul class="nav nav-pills">
-                <li role="presentation" class="active"><?= Html::a('Главная','/web/')?></li>
-                <li role="presentation" ><?= Html::a('Профиль',['post/index'])?></li>
-                <li role="presentation" ><?= Html::a('Статья',['post/show'])?></li>
+<!--                <li role="presentation" class="active">--><?php //= Html::a('Главная','/web/')?><!--</li>-->
+                <li role="presentation" ><?= Html::a('Чат Бот ',['post/index'])?></li>
+                <li role="presentation" ><?= Html::a(' Админ страница ',['post/show'])?></li>
             </ul>
             <?= $content?>
         </div>

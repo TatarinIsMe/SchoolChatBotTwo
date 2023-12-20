@@ -1,4 +1,5 @@
 <h1>ADD Quesiton and Answer</h1>
+<h5>Под Id имеется ввиду после какого вопроса хотим добавить вопрос</h5>
 <?php
 use yii\widgets\ActiveForm;
 use yii\helpers\Html;
@@ -10,9 +11,18 @@ use yii\widgets\Pjax;
 <?= $form->field($model,'question')?>
 <?= $form->field($model,'answer')?>
 <?= $form->field($model,'id')?>
-<?= Html::submitButton('Send',['class' => 'btn btn-success'])?>
+<?= Html::submitButton('Add',['class' => 'btn btn-success'])?>
 <?php ActiveForm::end()?>
-
+<h1>Change Quesiton and Answer</h1>
+<h3>Вместо пропусков ставим "-"</h3>
+<?php $formAdd = ActiveForm::begin() ?>
+<?= $formAdd->field($modelChange,'question')?>
+<?= $formAdd->field($modelChange,'answerYes')?>
+<?= $formAdd->field($modelChange,'answerNo')?>
+<?= $formAdd->field($modelChange,'answerStrict')?>
+<?= $formAdd->field($modelChange,'id')?>
+<?= Html::submitButton('Change',['class' => 'btn btn-success'])?>
+<?php ActiveForm::end()?>
 <?php
 //debug($cats);
 ?>

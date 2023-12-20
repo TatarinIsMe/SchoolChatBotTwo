@@ -36,14 +36,16 @@ use yii\widgets\Pjax;
 <?= Html::input('text', 'string', Yii::$app->request->post('string'), ['class' => 'form-control']) ?>
 <?= Html::submitButton('Отправить', ['class' => 'btn btn-lg btn-primary', 'name' => 'hash-button']) ?>
 <?= Html::endForm() ?>
-<?php
-echo $testText;
-?>
+
 <h1>Бот: <?php
 //foreach ($messages as $text){
 //    echo "$text<br/>";
 //}
     echo $messages;
     ?></h1>
+<?php
+echo 'Detail Order: ';
+echo $testText;
+?>
 <?php Pjax::end(); ?>
 

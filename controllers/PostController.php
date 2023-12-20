@@ -6,17 +6,21 @@ header("Access-Control-Allow-Origin: *");
 //use yii\web\Controller;
 use app\models\Answer;
 use app\models\Category;
+use app\models\History;
 use app\models\Last;
 use app\models\LastOrder;
 use app\models\Questions;
 use Yii;
 use app\models\TestForm;
 use app\models\AddForm;
+use app\models\ChangeForm;
+//use app\models\History;
 class PostController extends AppController {
 
 
     public $layout = 'basic';
     public $array = array();
+
 
     public $lastItem=0;
 
@@ -43,39 +47,23 @@ class PostController extends AppController {
 
 
     public function actionIndex(){
-        $array[] = 'Welcome';
-        $idNextQ = 0;
         $textOutputTest ='';
-
-
-        //$question = $this->getQuestion(1);
+        $history = new History();
         $string = Yii::$app->request->post('string');
 //        $answers = Questions::find()->with('answer')->all();
-//        debug($answers[0]->answer);
-        $mess='';
 
         if ($string != null){
+            $history->saveHistory($string);
             if ($string == 'да' || $string == 'нет'){
                 //$question = $this->getYesNo($string);
                 $this->getYesNo($string);
                 //обнуление заказа
-
-            } else {
+            } else if ($string != ''){
                  $textOutputTest = $this->getStrictAnswer($string);
-
             }
-
-              //  $question = $this->getYesNo($string);
-                //debug($question);
-               // $question = $this->getQuestion($question->idNo);
         }
-
-
         $lastItem = $this->getLastItem();
         $question = $this->getQuestion($lastItem->current_row)->text;
-      //  $questionTwo =  $this->getQuestion($idNextQ);
-
-
 //        if (Yii::$app->request->isAjax){
 //            debug(Yii::$app->request->post());
 //            return 'test';
@@ -83,8 +71,6 @@ class PostController extends AppController {
         $model = new TestForm();
         //$string = Yii::$app->request->post('string');
         //  $array[] = $string;
-        //debug($array);
-
         //if ($model->load(Yii::$app->request->post())){
 //            if ($model->valideate()){
 //                Yii::$app->session->setFlash('success', 'Okay, Accepted');
@@ -100,13 +86,13 @@ class PostController extends AppController {
         //}
         //return $this->render('test', compact('model'));
        // return $this->render('test', compact('model', 'array'));
-
         //return $this->render('test', ['messages' => $question->text]);
+        $history->saveHistory($question);
         return $this->render('test', ['messages' => $question, 'testText' => $textOutputTest]);
     }
     public function getYesNo($answer){
         $current = $this->getLastItem();
-        $answers = Questions::find()->with('answer')->where(['id' => $current])->all();
+        $answers = Questions::find()->with('answer')->where(['id' => $current->current_row])->all();
         if ($answer == 'да'){
             $this->saveIdItem($answers[0]->answer[0]->next_question_id);
             //Описание заявки
@@ -119,30 +105,35 @@ class PostController extends AppController {
            // return $answers[0]->text;
         }  else {
             $this->saveIdItem($answers[0]->answer[1]->next_question_id);
-            $text = 'Заявка  ';
+            $text = 'Заявка: ';
             $this->updateLastOrder($text);
             //return $answers[0]->text;
         }
     }
     public function getStrictAnswer($answer){
+        $history = new History();
         $message = '';
         $lastItem = $this->getLastOrder();
         $message .= $lastItem;
         $message .=$answer;
 
         $current = $this->getLastItem();
-        $answers = Questions::find()->with('answer')->where(['id' => $current])->all();
+        $answers = Questions::find()->with('answer')->where(['id' => $current->current_row])->all();
         $temp = $answers[0]->answer[0]->name;
         $message .= $temp;//приписываем ответ с ответа на вопрос
         //обновляем значение в бд
+        $history->saveHistory($message);
         $this->updateLastOrder($message);
 
 
-        //Прописываем проверку на пустое
+        //Прописываем проверку на пустое (то есть конец)
         if ($answers[0]->answer[0]->next_question_id == null){
             //$specialist = $answers[0]->answer[0]->name;
            // $this->sentToSpecialist($message);
             $this->saveIdItem(1);
+            $text = 'Заявка  ';
+            $this->updateLastOrder($text);
+            $history->addHistory();
             return $message;
 
         }
@@ -191,9 +182,12 @@ class PostController extends AppController {
 
 
     public function saveIdItem($id){
-        $item =new Last();
-        $item->current_row = $id;
-        $item->save(false);
+        $post = Last::find()->where(['id' =>'1'])->all();
+        $post[0]->current_row = $id;
+        $post[0]->save();
+//        $item =new Last();
+//        $item->current_row = $id;
+//        $item->save(false);
     }
     public function addQuestion($text){
         $item =new Questions();
@@ -236,6 +230,7 @@ class PostController extends AppController {
     }
     public function actionShow(){
         $model = new AddForm();
+        $modelChange = new ChangeForm();
         if ($model->load(Yii::$app->request->post())){
 
             $idQuestion = $model->id;
@@ -254,6 +249,10 @@ class PostController extends AppController {
             $this->addAnswerStrict($count,$next_id);
             $this->changeAnswerStrict($idQuestion,$count);
         }
+        }
+        if ($modelChange->load(Yii::$app->request->post())){
+            $modelChange->addQuestions();
+            $modelChange->addAnswers();
 
 
 
@@ -272,23 +271,13 @@ class PostController extends AppController {
         //change previous question
 
 
-
-
-
-
-
-
         //$data = file_get_contents('/Applications/MAMP/htdocs/basic');
-       // $data = 'Hello';
-        //echo $data;
+
        // $cats = Category::find()->asArray()->where('age = 11')->all();
 //        $cats = Category::find()->asArray()->all();
 //        $cats = Category::find()->with('product')->where('id=1')->all();
         $answers = Questions::find()->all();
         $cats = Category::find()->with('product') -> all();
-       // debug($answers);
-        return $this->render('show', compact( 'model', 'answers'));
-        
-        //return $this->render('show');
+        return $this->render('show', compact( 'model', 'answers', 'modelChange'));
     }
 }
