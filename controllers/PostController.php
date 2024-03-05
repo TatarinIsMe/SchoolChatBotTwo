@@ -7,19 +7,95 @@ header("Access-Control-Allow-Origin: *");
 use app\models\Answer;
 use app\models\Category;
 use app\models\History;
+use app\models\Journal;
 use app\models\Last;
 use app\models\LastOrder;
+use app\models\Photo;
 use app\models\Questions;
 use Yii;
 use app\models\TestForm;
 use app\models\AddForm;
 use app\models\ChangeForm;
+use yii\web\UploadedFile;
+use yii\web\UrlManager;
+use yii\helpers\Url;
+use yii\filters\Cors;
 //use app\models\History;
 class PostController extends AppController {
 
-
     public $layout = 'basic';
     public $array = array();
+
+    public function behaviors()
+    {
+        $behaviors = parent::behaviors();
+        $behaviors['corsFilter'] = [
+            'class' => \yii\filters\Cors::className(),
+        ];
+
+        return $behaviors;
+    }
+
+    public function beforeAction($action) {
+        $this->enableCsrfValidation = false;
+        return parent::beforeAction($action);
+    }
+
+    public function actionAjax() {
+        $param11 = '';
+//        if(Yii::$app->request->isAjax) {
+//            $param1 = Yii::$app->request->post('param1');
+//            debug("GOOD");
+//
+//            // Do something with the parameters
+//        }
+
+        if(\Yii::$app->request->isPost){
+           $output = '';
+           $param2 = Yii::$app->request->post();
+//           var_dump($param2);
+            //$param11 .= $param2["param1"];
+            //return $param11;
+//            return ['var1'=>'12'];
+            $json = '{"a":1,"b":2,"c":3,"d":4,"e":5}';
+//            return $json;
+
+
+            $output = $this->mainIndex($param2['param1']);
+
+
+            return $output;
+        }
+        //var_dump($param2 = Yii::$app->request->post());
+
+
+            //return $this->render('test', ['messages' => $param1, 'testText' => '']);
+
+    }
+
+    public function mainIndex($answer){
+        $textOutputTest ='';
+        $history = new History();
+        $string = $answer;
+        if ($string != null){
+            $history->saveHistory($string);
+            if ($string == 'да' || $string == 'нет'|| $string == 'Да'|| $string == 'Нет'){
+                $this->getYesNo($string);
+                //обнуление заказа
+            } else if ($string != ''){
+                if ($this->checkAnswer()){
+                    $this->saveIdItem(1);
+                    return "Поле не должно быть пустым";
+                }
+                $textOutputTest = $this->getStrictAnswer($string,$model);
+            }
+        }
+        $lastItem = $this->getLastItem();
+        $question = $this->getQuestion($lastItem->current_row)->text;
+        $history->saveHistory($question);
+        return $question;
+    }
+
 
 
     public $lastItem=0;
@@ -44,22 +120,38 @@ class PostController extends AppController {
         debug($result);
         die;
     }
+    public function addPhoto($model){
+                if (Yii::$app->request->isPost){
+            $model->load(Yii::$app->request->post());
+            $model->file = UploadedFile::getInstance($model, 'file');
+            //$model->file = $model->file->baseName;
+            //$model->file->saveAs("img/{$model->file->baseName}.{$model->file->extension}");
+            $model->save(false);
+
+        }
 
 
+    }
     public function actionIndex(){
+        //Photo
+        $model = new Photo();
+     //    $this->addPhoto($model);
         $textOutputTest ='';
         $history = new History();
         $string = Yii::$app->request->post('string');
 //        $answers = Questions::find()->with('answer')->all();
-
         if ($string != null){
             $history->saveHistory($string);
-            if ($string == 'да' || $string == 'нет'){
+            if ($string == 'да' || $string == 'нет' || $string == 'Да' || $string == 'Нет'){
                 //$question = $this->getYesNo($string);
                 $this->getYesNo($string);
                 //обнуление заказа
             } else if ($string != ''){
-                 $textOutputTest = $this->getStrictAnswer($string);
+                if ($this->checkAnswer()){
+                     $this->saveIdItem(1);
+                    return $this->render('test', ['messages' => "Wrong answer", 'testText' => $textOutputTest, 'model' => $model]);
+                }
+                 $textOutputTest = $this->getStrictAnswer($string,$model);
             }
         }
         $lastItem = $this->getLastItem();
@@ -68,7 +160,7 @@ class PostController extends AppController {
 //            debug(Yii::$app->request->post());
 //            return 'test';
 //        }
-        $model = new TestForm();
+        //$model = new TestForm();
         //$string = Yii::$app->request->post('string');
         //  $array[] = $string;
         //if ($model->load(Yii::$app->request->post())){
@@ -88,12 +180,13 @@ class PostController extends AppController {
        // return $this->render('test', compact('model', 'array'));
         //return $this->render('test', ['messages' => $question->text]);
         $history->saveHistory($question);
-        return $this->render('test', ['messages' => $question, 'testText' => $textOutputTest]);
+        return $this->render('test', ['messages' => $question, 'testText' => $textOutputTest, 'model' => $model]);
+
     }
     public function getYesNo($answer){
         $current = $this->getLastItem();
         $answers = Questions::find()->with('answer')->where(['id' => $current->current_row])->all();
-        if ($answer == 'да'){
+        if ($answer == 'да' || $answer == 'Да' ){
             $this->saveIdItem($answers[0]->answer[0]->next_question_id);
             //Описание заявки
             $textOrder = $answers[0]->answer[0]->name;
@@ -110,35 +203,81 @@ class PostController extends AppController {
             //return $answers[0]->text;
         }
     }
-    public function getStrictAnswer($answer){
+    public function getStrictAnswer($answer,&$photo){
         $history = new History();
+        $journal =  new Journal();
         $message = '';
         $lastItem = $this->getLastOrder();
         $message .= $lastItem;
-        $message .=$answer;
+       // $message .=$answer;
 
         $current = $this->getLastItem();
         $answers = Questions::find()->with('answer')->where(['id' => $current->current_row])->all();
         $temp = $answers[0]->answer[0]->name;
+//        if ($temp == 'количество'){
+//            $temp= '- количество нобходимых деталей';
+//        }
+        $temp = $this->checkForJournal($temp,$message, $answer, $photo);
         $message .= $temp;//приписываем ответ с ответа на вопрос
         //обновляем значение в бд
         $history->saveHistory($message);
         $this->updateLastOrder($message);
 
-
         //Прописываем проверку на пустое (то есть конец)
-        if ($answers[0]->answer[0]->next_question_id == null){
+        if ($answers[0]->answer[0]->next_question_id == 1){ //тут должен быть проверка на null
             //$specialist = $answers[0]->answer[0]->name;
            // $this->sentToSpecialist($message);
             $this->saveIdItem(1);
             $text = 'Заявка  ';
             $this->updateLastOrder($text);
             $history->addHistory();
+            $journal->createNew();
+            $message = '';
             return $message;
 
         }
         $this->saveIdItem($answers[0]->answer[0]->next_question_id);
         return $message;
+    }
+
+    public function checkForJournal($answer,$message , $value, &$photo){
+        $model = new Journal();
+        $test = new Photo();
+        $temp = '';
+        $tempNum = '';
+        if ($answer == 'количество'){
+//            $temp .= $message;
+            $tempNum = $value;
+//            $temp .= '- количество нобходимых деталей';
+            $model->addNumber($tempNum);
+            return '';
+        } else if ($answer == 'кабинет') {
+            $tempNum = $value;
+            $model->addRoom($tempNum);
+            //$temp .= '- кабинет в котором неисправность';
+//            return $temp;
+        } else if ($answer == 'фото'){
+          //  $this->addPhoto($test);
+        } else if ($answer == 'Конец'){
+            return "Конец";
+
+        } else {
+            $temp .= $message;
+            $model->addText($temp);
+            return $temp;
+        }
+        $temp .= $message;
+        $model->addText($temp); //здесь измненеия
+        return $temp;
+    }
+
+    public function checkAnswer(){
+        $current = $this->getLastItem();
+        $answers = Questions::find()->with('answer')->where(['id' => $current->current_row])->all();
+        if (count($answers[0]->answer)>1 && $answers[0]->answer[1]->name == 'Нет'){
+            return true;
+        } else
+            return false;
     }
 
     public function getLastOrder(){
@@ -279,5 +418,9 @@ class PostController extends AppController {
         $answers = Questions::find()->all();
         $cats = Category::find()->with('product') -> all();
         return $this->render('show', compact( 'model', 'answers', 'modelChange'));
+    }
+    public function actionJournal(){
+        $item = Journal::find()->all();
+        return $this->render('journal',['applications'=> $item]);
     }
 }

@@ -20,6 +20,15 @@ $config = [
             //     'application/json' => 'yii/web/JsonParser',
             // ]
         ],
+        'cors' => [
+            'class' => \yii\filters\Cors::className(),
+            'cors' => [
+                'Origin' => ['http://127.0.0.1:5500/'],
+                'Access-Control-Request-Method' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+                'Access-Control-Request-Headers' => ['*'],
+            ],
+        ],
+
         'cache' => [
             'class' => 'yii\caching\FileCache',
         ],
@@ -61,13 +70,14 @@ $config = [
         ],
         'db' => $db,
         
-        // 'urlManager' => [
-        //     'enablePrettyUrl' => true,
-        //     'showScriptName' => false,
-        //     'rules' => [
-        //         ['class' => 'yii/rest/UrlRule','controller' => 'user'],
-        //     ],
-        // ],
+         'urlManager' => [
+             'enablePrettyUrl' => true,
+             'showScriptName' => false,
+             'rules' => [
+                 //['class' => 'yii/rest/UrlRule','controller' => 'user'],
+                 '<controller:\w+>/<action:\w+>' => '<controller>/<action>',
+             ],
+         ],
 
     ],
     'params' => $params,

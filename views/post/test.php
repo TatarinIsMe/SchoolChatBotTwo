@@ -19,16 +19,16 @@ use yii\widgets\Pjax;
 <?php endif;;?>
 
 
-<?php //$form = ActiveForm::begin() ?>
-<?php ////= Html::input('text', 'username', $model->name, []) ?>
-<?php //= $form->field($model, 'name')?>
-<?php //= $form->field($model, 'email')?>
-<?php //= $form->field($model, 'text')?>
-<?php //= Html::submitButton('Send', ['class' => 'btn btn-success'])?>
-<?php //= Html::button('Кнопочка', ['class'=>'btn class here',
-//    'onclick' => '',
-//]);?>
-<?php //= Html::a('CLick', ['post/index'], ['class' => 'btn btn-success']) ?>
+<?php //$form = ActiveForm::begin(['options' => ['enctype' => 'multipart/form-data']]) ?>
+<?php //////= Html::input('text', 'username', $model->name, []) ?>
+<?php //echo  $form->field($model, 'file')->fileInput()?>
+<?php ////= $form->field($model, 'email')?>
+<?php ////= $form->field($model, 'text')?>
+<?php //echo Html::submitButton('SendPhoto', ['class' => 'btn btn-success'])?>
+<?php ////= Html::button('Кнопочка', ['class'=>'btn class here',
+////    'onclick' => '',
+////]);?>
+<?php ////= Html::a('CLick', ['post/index'], ['class' => 'btn btn-success']) ?>
 <?php //ActiveForm::end() ?>
 
 <?php Pjax::begin(); ?>

@@ -39,8 +39,8 @@ class ChangeForm extends Model
             $post[0]->save();
         } else if ($this->answerStrict != '-'){
             $post = Answer::find()->where(['question_id' =>$this->id])->all();
-            $post[1]->name = $this->answerStrict;
-            $post[1]->save();
+            $post[0]->name = $this->answerStrict;
+            $post[0]->save();
         } else return;
     }
 
