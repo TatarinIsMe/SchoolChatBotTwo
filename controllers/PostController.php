@@ -16,6 +16,7 @@ use Yii;
 use app\models\TestForm;
 use app\models\AddForm;
 use app\models\ChangeForm;
+use yii\data\ActiveDataProvider;
 use yii\web\UploadedFile;
 use yii\web\UrlManager;
 use yii\helpers\Url;
@@ -51,19 +52,17 @@ class PostController extends AppController {
 //        }
 
         if(\Yii::$app->request->isPost){
-           $output = '';
+//           $output = '';
            $param2 = Yii::$app->request->post();
 //           var_dump($param2);
             //$param11 .= $param2["param1"];
             //return $param11;
 //            return ['var1'=>'12'];
-            $json = '{"a":1,"b":2,"c":3,"d":4,"e":5}';
+//            $json = '{"text":"Question","info":"Конец"}';
 //            return $json;
 
 
             $output = $this->mainIndex($param2['param1']);
-
-
             return $output;
         }
         //var_dump($param2 = Yii::$app->request->post());
@@ -93,12 +92,22 @@ class PostController extends AppController {
         $lastItem = $this->getLastItem();
         $question = $this->getQuestion($lastItem->current_row)->text;
         $history->saveHistory($question);
-        return $question;
+        if ($this->isNextStrict()){
+            if ($textOutputTest != 'Конец')
+            $textOutputTest = 'Strict';} else
+                $textOutputTest ='YesNo';
+        return json_encode(['text'=> $question, 'type' => $textOutputTest]);
+//        return $question;
+    }
+    public function isNextStrict(){
+        $current = $this->getLastItem();
+        $answers = Questions::find()->with('answer')->where(['id' => $current->current_row])->all();
+        if (count($answers[0]->answer)==1)
+            return true; else
+                return false;
+
     }
 
-
-
-    public $lastItem=0;
 
     public function getLastItem(){
         $count = Last::find()
@@ -134,6 +143,7 @@ class PostController extends AppController {
     }
     public function actionIndex(){
         //Photo
+        $out = [];
         $model = new Photo();
      //    $this->addPhoto($model);
         $textOutputTest ='';
@@ -151,7 +161,7 @@ class PostController extends AppController {
                      $this->saveIdItem(1);
                     return $this->render('test', ['messages' => "Wrong answer", 'testText' => $textOutputTest, 'model' => $model]);
                 }
-                 $textOutputTest = $this->getStrictAnswer($string,$model);
+                $textOutputTest = $this->getStrictAnswer($string,$model);
             }
         }
         $lastItem = $this->getLastItem();
@@ -233,11 +243,28 @@ class PostController extends AppController {
             $history->addHistory();
             $journal->createNew();
             $message = '';
-            return $message;
-
+//            return $message;
+//            return ['text' => $message, 'type' => ''];
+        }
+        //сделать проверкку на значние "Конец", далее передать выше в главный метод
+        if ($this->isLast($answers[0]->answer[0]->next_question_id)){
+            $message = 'Конец';
+        } else {
+            $message = 'Strict';
         }
         $this->saveIdItem($answers[0]->answer[0]->next_question_id);
         return $message;
+//        return ['text' => $message, 'type' => $type];
+    }
+
+    public function isLast($id){
+        //id - это вопрос  с пометкой Конец
+        $type = '';
+        $answers = Questions::find()->with('answer')->where(['id' => $id])->all();
+        $type = $answers[0]->answer[0]->name;
+        if ($type == 'Конец')
+        return true; else
+            return false;
     }
 
     public function checkForJournal($answer,$message , $value, &$photo){
@@ -418,6 +445,13 @@ class PostController extends AppController {
         $answers = Questions::find()->all();
         $cats = Category::find()->with('product') -> all();
         return $this->render('show', compact( 'model', 'answers', 'modelChange'));
+//        $dataProvider = new ActiveDataProvider([
+//           'query' => Questions::find(),
+//           'pagination' => [
+//               'pageSize' => 20,
+//           ]
+//        ]);
+//        return $this->render('question', ['dataProvider' => $dataProvider]);
     }
     public function actionJournal(){
         $item = Journal::find()->all();
