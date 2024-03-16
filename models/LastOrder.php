@@ -8,5 +8,20 @@ class LastOrder extends ActiveRecord
     {
         return 'application';
     }
+    public function getLastOrder(){
+        $count = LastOrder::find()
+            ->count();
+        $lastItem = LastOrder::find()
+            ->where(['id' => $count])
+            ->one();
+        return $lastItem->text;
+    }
+    public function updateLastOrder($text){
+        $count = LastOrder::find()
+            ->count();
+        $post = LastOrder::find()->where(['id' =>$count])->all();
+        $post[0]->text = $text;
+        $post[0]->save();
+    }
 
 }

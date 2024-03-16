@@ -3,6 +3,7 @@
 namespace app\models;
 
 use yii\db\ActiveRecord;
+use yii\web\UploadedFile;
 
 class Photo extends ActiveRecord
 {
@@ -18,6 +19,16 @@ class Photo extends ActiveRecord
             [['file'], 'required'],
             [['file'], 'file', 'skipOnEmpty' => false, 'extensions' => 'png, jpg'],
         ];
+    }
+
+    public function addPhoto($model){
+        if (Yii::$app->request->isPost){
+            $model->load(Yii::$app->request->post());
+            $model->file = UploadedFile::getInstance($model, 'file');
+            //$model->file = $model->file->baseName;
+            //$model->file->saveAs("img/{$model->file->baseName}.{$model->file->extension}");
+            $model->save(false);
+        }
     }
 
 

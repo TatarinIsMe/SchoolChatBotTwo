@@ -33,6 +33,9 @@ AppAsset::register($this);
                 <li class="nav-item">
                     <a class="nav-link " href="show">Админ страница</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link " href="edit">Админ страница 2</a>
+                </li>
                 <li class="nav-item ">
                     <a class="nav-link " href="journal">Журнал</a>
                 </li>
